@@ -3,6 +3,8 @@ using DataFrames
 using JuMP
 using Gurobi
 using LinearAlgebra
+using Plots
+using StatsPlots
 
 # Import data
 function import_data()
@@ -204,36 +206,45 @@ function pscopf!(model::Model)
     return unsafe_contingencies
 end
 
+function analyze_pscopf(set::NamedTuple, param::Parameters)
+    security_costs = Vector{Float64}();
+    timings = Vector{Float64}();
+
+    max_load = deepcopy(param.Pd);
+
+    load_factors = 0.5:0.02:1;
+
+    for load_factor in load_factors
+        param.Pd .= max_load .* load_factor;
+
+        model = create_base_model(set, param);
+        model[:param] = param;
+        model[:set] = set;
+
+        optimize!(model);
+
+        cost_init = objective_value(model);
+
+        timing = @elapsed pscopf!(model);
+
+        push!(timings, timing);
+
+        cost_final = objective_value(model);
+
+        push!(security_costs, (cost_final - cost_init)/cost_init * 100);
+    end
+
+    return load_factors, security_costs, timings;
+end
+
 data = import_data();
 set = create_sets(data);
 param = create_parameters(data);
 
-model = create_base_model(set, param);
-model[:param] = param;
-model[:set] = set;
+load_factors, security_costs, timings = analyze_pscopf(set, param);
 
-optimize!(model);
-
-cost_init = objective_value(model);
-
-
-unsafe_contingencies = pscopf!(model)
-#=
-unsafe_contingencies = Vector{Int64}()
-check_contingencies!(model, unsafe_contingencies)
-
-for i in unsafe_contingencies
-    add_contigency_constraint!(model, i);
-end
-
-optimize!(model) 
-=#
-
-#=
-unsafe_contingencies2 = Vector{Int64}()
-
-cost_after = objective_value(model);
-check_contingencies!(model, unsafe_contingencies2)
-
-SC = cost_after - cost_init
-=#
+##
+p1 = plot(load_factors .* 100, security_costs, xlabel = "Total Load (% of peak load)", ylabel = "Relative Security cost (%)", legend = false)
+p2 = plot(load_factors .* 100, timings, xlabel = "Total Load (% of peak load)", ylabel = "Execution time [s]", legend = false)
+plot(p1, p2, layout = (2, 1))
+plot!(size=(600,800))
