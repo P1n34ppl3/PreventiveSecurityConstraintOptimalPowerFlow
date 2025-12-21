@@ -1,0 +1,117 @@
+\section{Description of the problem}
+The outage of a generator will cause the system's frequency to drop, subsequently the primary response of the system will increase the generation across all generators to restore the power balance and keep the system's frequency within limits. Each generator's change in power output is governed by the following equation:\[
+min(-D_g \cdot \Delta f_c, P^{max}_g - P_{g0})
+\] 
+where $D_g$ is the frequency regulation constant, $\Delta f_c$ is the frequency deviation, $P^{max}_g$ is max power output of the generator and $P_{g0}$ is the pre-contingency power output of the generator. The primary response of a generator can be expressed in normalized way, the droop coefficient $s_g$: \[
+s_g = \frac{P^{max}_g}{D_g \cdot f_0}
+\] 
+where $f_0$ represents the nominal frequency.
+
+The primary response of the system is automatic, and not constrained to respect the operating limits of the transmission lines. Therefore the outage of a generator may lead to the overloading of the transmission system. This is the problem the PSCOPF formulation on the next page adresses, it achieves this by enforcing the satisfaction of the transmission system's operating limits for all possible contingecies, while simultaneously optimizing the pre-contingency operating cost of the system.
+
+Constraint (\ref{eq:power_balance}) enforces the power balance at each node.(\ref{eq:gen_limits}) enforces the generator limits and fixes $P_{gc}$ to $0$ if the generator is out. (\ref{eq:wind_limits}) limits wind turbines to the maximum available power. (\ref{eq:dc_flow}) enforces the DC powerflow equations. (\ref{eq:line_limits}) enforces the operational limits of the tranmission lines. (\ref{eq:angle_limits}) enforces the angle limits. (\ref{eq:slack_bus}) sets the slack bus. (\ref{eq:primary_upper}), (\ref{eq:primary_upper}) and (\ref{eq:primary_lower}) enforce the primary frequency response of the generators. If $z_{gc_g}=0$, then $P_{gc_g}=P_{g0} + D_g \cdot \Delta f_{c_g}$. If $z_{gc_g}=1$, then $P_{gc_g}$ is fixed to its maximum value. The large positive constant in (\ref{eq:primary_lower}) allows $P_{gc_g}$ to equal $P^{max}_g$ if $P_{g0} + D_g \cdot \Delta f_{c_g}$ is larger, without this constant the problem would become infeasible when generators reach their maximum output.
+
+This models uses the DC power flow formulation, because this keeps the problem linear. Using the AC power flow equations would transform the problem from a Mixed Integer Linear programming problem (MILP) into a Mixed Integer Non-Linear Programming problem (MINLP), which modern day solvers struggle with \cite{OPES}.
+\newpage
+Since this models assumes there will not be any redispatching, $P^w_n$ and $P^d_n$ stay constant for all states. Furthermore additional generators can not be switched on and lines can not be switched in or out during a contingency state. Any other form of power flow control is also assumed to be impossible.
+
+\begin{minipage}[h]{0.48\textwidth}
+\begin{center}
+    \textbf{Sets}
+\end{center}
+\begin{tabular}{p{0.15\textwidth} p{0.6\textwidth}}
+$n \in \mathcal{N}$ & Index and the set of Nodes\\
+$k \in \mathcal{K}$ & Index and the set of Branches\\
+$g \in \mathcal{G}$ & Index and the set of generators\\
+$d \in \mathcal{D}$ & Index and the set of loads\\
+$c \in \mathcal{C}$ & Index and the set of operating states of the system, where $c = 0$ is the pre-contingency state and $c = c_g$ is state with outage of generator $g$\\
+\end{tabular}
+\begin{center}
+    \textbf{Parameters}
+\end{center}
+\begin{tabular}{p{0.15\textwidth} p{0.6\textwidth}}
+$\theta^{\min}$ & Minimum voltage angle \\
+$\theta^{\max}$ & Maximum voltage angle \\
+$P^{\min}_g$ & Minimum active power output of generator $g$ \\
+$P^{\max}_g$ & Maximum active power output of generator $g$ \\
+$P^{f_w}_n$ & Maximum available wind generation at node $n$ \\
+$P^{\max}_k$ & Maximum rating of transmission element $k$\\
+$P^d_n$ & Active power demand at node $n$ \\
+$C_g(P)$ & Cost function of generator $g$ \\
+$B_k$ & Electrical susceptance of transmission line $k$ \\
+$D_g$ & Frequency regulation constant of generator $g$ \\
+$I_{nk}$ & Network incidence matrix \\
+$\mathbf{1}_{ng}$ & Binary indicator: generator $g$ connected to node $n$ \\
+$\mathbf{1}_{gc}$ & Binary indicator: generator $g$ available in state $c$ \\
+$M$ & Large positive constant\\
+\end{tabular}
+\end{minipage}
+\begin{minipage}[h]{0.52\textwidth}
+\begin{center}
+    \textbf{Decision variables}
+\end{center}
+\begin{tabular}{p{0.15\textwidth} p{0.7\textwidth}}
+$\theta_{nc}$ & Voltage angle at node $n$ in state $c$.\\
+$P_{gc}$ & Active power output of generator $g$ in state c.\\
+$P^w_n$ & Effective wind power generation at node $n$. \\
+$P_{kc}$ & Active powerflow through tranmission line $k$ in state $c$\\
+$z_{gc_g}$ & Binary variable indicating indicating wheter a generator produces its maximum power in post-contingency state $c_g$\\
+$\Delta f_{c_g}$ & Frequency deviation of the system in post-contingency state $c_g$.
+\end{tabular}
+\begin{center}
+    \textbf{Objective}
+\end{center}
+\begin{equation*}
+    \min_{P_{g0}} \sum_{g} C_g(P_{g0})
+\end{equation*}
+\begin{center}
+    \textbf{Subject to}
+\end{center}
+\vspace{-5pt}
+\begin{align}
+\sum_{g} \mathbf{1}_{ng} P_{gc} + P^w_n + 
+&\sum_{k} I_{nk} P_{kc} = P^d_n , && \forall n, c
+\label{eq:power_balance} \\
+%
+\mathbf{1}_{gc} P^{\min}_g \le P_{gc} 
+&\le \mathbf{1}_{gc} P^{\max}_g ,
+&& \forall g, c
+\label{eq:gen_limits} \\
+%
+0 \le P^w_n 
+&\le P^{f_w}_n , && \forall n
+\label{eq:wind_limits} \\
+%
+P_{kc}
+&= B_k \sum_{n} I_{nk} \theta_{nc} , && \forall k, c
+\label{eq:dc_flow} \\
+%
+- P^{\max}_{kc} \le P_{kc} 
+&\le P^{\max}_{kc} , && \forall k, c
+\label{eq:line_limits} \\
+%
+\theta^{\min} \le \theta_{nc} 
+&\le \theta^{\max} , && \forall n > 1, c
+\label{eq:angle_limits} \\
+%
+\theta_{1c}
+&= 0 , && \forall c
+\label{eq:slack_bus} \\
+%
+P_{gc_g} 
+&\ge z_{gc_g} P^{\max}_g , && \forall g, c_g
+\label{eq:primary_max} \\
+%
+P_{gc_g}
+\le \mathbf{1}_{gc_g}
+( P_{g0} - &D_g \Delta f_{c_g} ) , && \forall g, c_g
+\label{eq:primary_upper} \\
+%
+P_{gc_g}
+\ge \mathbf{1}_{gc_g}
+( P_{g0} - 
+&D_g \Delta f_{c_g} )
+- M z_{gc_g} , && \forall g, c_g
+\label{eq:primary_lower}
+\end{align}
+\end{minipage}

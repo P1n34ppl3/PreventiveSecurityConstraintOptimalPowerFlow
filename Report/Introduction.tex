@@ -1,0 +1,7 @@
+\section*{Introduction}
+Preventive security constrained optimal power flow (PSCOPF) algorithms guarantee the satisfaction of the system's operating limits for each post-contingency state without redispatching power system elements, while optimizing the operating cost of the pre-contingency state \cite{paper}. This report discusses the reproduction of such a model described in \cite{paper}.
+
+When an outage occurs in a power system, the powerflows and voltages in the system change. To avoid a further domino effect of outages, the system needs to remain within its operating limits. Most PSCOPF models only consider line contingencies and therefore do not guarantee the system's security for all generators failures. The PSCOPF model formulated in section III. A. of \cite{paper} only accounts for generator contingencies and shows that generator contingencies do need to be considered when calculating a PSCOPF. This is the model that is replicated in this report.
+
+First, section 1 describes the problem the PSCOPF model adresses and explains its mathematical formulation. Then, the julia implementation of the model is explainened. In the final section the implementation is validated and the results are discussed. 
+
