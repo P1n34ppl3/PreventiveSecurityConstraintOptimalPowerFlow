@@ -15,6 +15,8 @@ This models uses the DC power flow formulation, because this keeps the problem l
 \newpage
 Since this models assumes there will not be any redispatching, $P^w_n$ and $P^d_n$ stay constant for all states. Furthermore additional generators can not be switched on and lines can not be switched in or out during a contingency state. Any other form of power flow control is also assumed to be impossible.
 
+This model does not opimize the droop coefficients of the generators, hence it is called \textit{Preventive Security Constrained Optimal Powerflow with fixed droop coefficients}.
+
 \begin{minipage}[h]{0.48\textwidth}
 \begin{center}
     \textbf{Sets}

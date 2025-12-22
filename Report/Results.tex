@@ -1,0 +1,30 @@
+\section{Results}
+\subsection*{Validation for the base case with non-binding security constraints}
+
+To validate the model for a base case with non-binding security constraints, the base case first needs to be constructed and the security needs to be verified. The base case is constructed by applying a total load that is $20\%$ of the peak load, since the OPF of a system with low load is more likely to satisfy the security constraints. Next, the security of the OPF is verified by running the \textbf{check\_contingencies} method. Finally, the PSCOPF of the system is calculated and the results are compared with the results of the normal OPF. Since the security constraints are non-binding, the two solutions should match. 
+
+For this implementation, the two solutions match. Therefore it can be concluded that the PSCOPF function is correct for this base case.
+
+\subsection*{Replication of the results in section V. A. of \cite{paper}}
+\cite{paper} uses the three-are IEEE RTS from \cite{data} for the case study in section V. A. However, this data lacks information on the droop coefficients of the generators, this missing information was filled in by assuming the droop coefficients for all generators were equal to $2\%$. The paper also does not specify how much wind penetration was applied, thus random wind data set with a large amount of wind generation was chosen. 
+
+Figure \ref{fig:cost} shows the relative security cost ($=\frac{TC_{PSCOPF}-TC_{OPF}}{TC_{OPF}}$) in function of the total load on the system. The security cost is the extra cost it takes to run the system in a secure way, compared to the OPF case. The graph shows that for low loads, the OPF is already secure for all contingencies. Only in high load situations, will some contingencies become binding. Generally, a higher load means that there is a higher chance there will be binding contingencies and thus that the relative security cost will be higher. However this is not always the case as shown by the graph.
+
+Figure \ref{fig:time} shows the computation time in function of the total load. The figure shows that the computation time generally increases as the load increases, since the chance of binding contingencies increases as load increases, which causes the optimization problem to be more complex.
+\begin{figure}[h]
+    \centering
+    \begin{minipage}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/time.png}
+        \caption{Computation time as a function of the total system load.}
+        \label{fig:time}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/cost.png}
+        \caption{Computation cost as a function of the total system load.}
+        \label{fig:cost}
+    \end{minipage}
+\end{figure}
+\newpage
+Figure 4 and 5 in the paper \cite{paper} show the same general trend as the results from this implementation. However the Relative security cost and the computation are a lot lower than in the paper. Since the results are very sensitive to the input data, the difference in the graphs, can be the explained by the uncertainty of which data the authors of \cite{paper} used.

@@ -1,0 +1,4 @@
+\section{Reflection on the model}
+In the paper, another model is discussed, where the droop coefficients are co-optimized as well. This model is computationally way more complex, and therefore requires relaxations to be solvable in a feasible amount of time. In theory, these relaxations will make the solution slightly less optimal, however the quality of these solutions is still way better than the quality of the exact PSCOPF with fixed droop coefficients, while having a similar computation time. Consequently, the model with fixed droop coefficients to calculate should only be used to calculate a PSCOPF for systems of which the generator's droop coefficients can not be changed.
+
+The models proposed by the paper also only account for generator contingencies, because the point of the paper is to show methods on how to account for them. When building a model for usage in the real world, line contingencies should be accounted for as well.
